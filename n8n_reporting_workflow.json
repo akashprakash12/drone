@@ -1,0 +1,297 @@
+{
+  "name": "AI UNLOCKED - Drone Launch and Excel Report",
+  "nodes": [
+    {
+      "id": "schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait1",
+      "name": "Wait 10 minutes",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        420,
+        300
+      ],
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "launch",
+      "name": "Launch Drone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://dashboard:8000/api/launch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Demo-Token",
+              "value": "REPLACE_WITH_TOKEN_FROM_automation_config.json"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wait2",
+      "name": "Wait for full mission (75 seconds)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        300
+      ],
+      "parameters": {
+        "amount": 75,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "get",
+      "name": "Get Detections",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        300
+      ],
+      "parameters": {
+        "url": "http://dashboard:8000/api/detections",
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "detections",
+        "include": "allOtherFields"
+      }
+    },
+    {
+      "id": "edit",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1520,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a",
+              "name": "Object",
+              "value": "={{ $json.detections.object }}",
+              "type": "string"
+            },
+            {
+              "id": "object-id",
+              "name": "Object_ID",
+              "value": "={{ $json.detections.object_id }}",
+              "type": "string"
+            },
+            {
+              "id": "model",
+              "name": "Model",
+              "value": "={{ $json.detections.model }}",
+              "type": "string"
+            },
+            {
+              "id": "b",
+              "name": "Confidence",
+              "value": "={{ $json.detections.confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "c",
+              "name": "Detection_Time",
+              "value": "={{ $json.detections.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "d",
+              "name": "Mission_ID",
+              "value": "={{ $json.mission_id }}",
+              "type": "string"
+            },
+            {
+              "id": "e",
+              "name": "Simulated",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "status",
+              "name": "Status",
+              "value": "Detected",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "xlsx",
+      "name": "Convert to XLSX",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1740,
+        300
+      ],
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "drone_detection_report.xlsx"
+        }
+      }
+    },
+    {
+      "id": "disk",
+      "name": "Save XLSX to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1960,
+        300
+      ],
+      "parameters": {
+        "operation": "write",
+        "fileName": "/home/node/.n8n-files/reports/drone_detection_report.xlsx",
+        "dataPropertyName": "data",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait 10 minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10 minutes": {
+      "main": [
+        [
+          {
+            "node": "Launch Drone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Drone": {
+      "main": [
+        [
+          {
+            "node": "Wait for full mission (75 seconds)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Detections": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to XLSX": {
+      "main": [
+        [
+          {
+            "node": "Save XLSX to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for full mission (75 seconds)": {
+      "main": [
+        [
+          {
+            "node": "Get Detections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Asia/Kolkata"
+  },
+  "active": false
+}

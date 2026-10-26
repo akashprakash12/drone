@@ -1,0 +1,58 @@
+{
+  "name": "AI UNLOCKED - Drone Launch",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-launch",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://dashboard:8000/api/launch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Demo-Token",
+              "value": "REPLACE_WITH_TOKEN_FROM_automation_config.json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-launch",
+      "name": "Launch Drone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Launch Drone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Asia/Kolkata"
+  },
+  "active": false,
+  "pinData": {}
+}

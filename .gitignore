@@ -1,0 +1,18 @@
+# Secrets / local configuration
+/automation_config.json
+.env
+*.pem
+*.key
+# Generated reports
+/files/*
+!/files/.gitkeep
+# Python / IDE
+__pycache__/
+*.pyc
+.vscode/
+# Local copies / backups
+*.bak
+
+# Private n8n data
+n8n-backup/
+n8n-data-backup.tar.gz

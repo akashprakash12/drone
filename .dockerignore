@@ -1,0 +1,9 @@
+.git
+.env
+.gitignore
+n8n-backup/
+files/
+__pycache__/
+*.zip
+*.xlsx
+*.bak

@@ -1,0 +1,75 @@
+
+name: ai-unlocked-drone
+
+services:
+
+  # ==========================================
+  # AI UNLOCKED - 3D DRONE DASHBOARD
+  # ==========================================
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: ai-unlocked-dashboard
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    volumes:
+      - ./automation_config.json:/app/automation_config.json:ro
+
+    networks:
+      - drone-network
+
+  # ==========================================
+  # N8N AUTOMATION + EXCEL REPORTING
+  # ==========================================
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+
+    container_name: ai-unlocked-n8n
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:5678:5678"
+
+    environment:
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RESTRICT_FILE_ACCESS_TO: /home/node/.n8n-files
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      TZ: Asia/Kolkata
+      GENERIC_TIMEZONE: Asia/Kolkata
+
+    volumes:
+      # Existing workflow database and credentials
+      - n8n_data:/home/node/.n8n
+
+      # Excel reports saved directly to Windows
+      - ./files:/home/node/.n8n-files/reports
+
+    depends_on:
+      - dashboard
+
+    networks:
+      - drone-network
+
+# ==========================================
+# DOCKER NETWORK
+# ==========================================
+networks:
+  drone-network:
+    driver: bridge
+
+# ==========================================
+# PRESERVE ORIGINAL N8N DATA
+# ==========================================
+volumes:
+  n8n_data:
+    external: true
+    name: n8n_data

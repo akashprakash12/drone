@@ -1,0 +1,196 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI UNLOCKED | Drone Vision Lab</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Segoe UI,Arial}*{box-sizing:border-box}body{margin:0;background:#06111f;color:#e8f7ff}header{padding:16px 24px;background:#10273d;border-bottom:1px solid #27526b;display:flex;justify-content:space-between;align-items:center;gap:10px}h1{font-size:22px;margin:0}header small{color:#70e4dc}main{padding:16px;display:grid;grid-template-columns:minmax(0,2fr) minmax(290px,1fr);gap:16px}.panel{border:1px solid #2b536c;border-radius:14px;background:#10263b;overflow:hidden}#scene{height:54vh;min-height:350px;background:radial-gradient(#194663,#061321);position:relative}#scene canvas{display:block}.tag{position:absolute;top:14px;left:14px;background:#071b2cc9;padding:8px 12px;border:1px solid #30a9b1;border-radius:8px;font-size:12px;letter-spacing:1px}.scan{position:absolute;border:2px solid #5bf4d0;border-radius:4px;color:#071e25;pointer-events:none;display:none;box-shadow:0 0 18px #39e7c088}.scan span{position:absolute;bottom:100%;left:-2px;background:#5bf4d0;color:#05252c;font-size:12px;font-weight:800;padding:3px 6px;white-space:nowrap}aside{padding:20px}h2{margin:0 0 8px;font-size:19px}.state{font-size:25px;color:#58e6d1;font-weight:800;margin:12px 0}button{border:0;border-radius:8px;background:#41dcc6;color:#05232a;padding:11px 16px;margin:4px 4px 4px 0;font-weight:800;cursor:pointer}button.secondary{background:#f7c767}button.muted{background:#d7e5f4}button:disabled{opacity:.45;cursor:not-allowed}.small{color:#9bbbcf;font-size:13px}.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #2b5067}#feed{margin-top:14px;min-height:110px;max-height:200px;overflow:auto;background:#071b2d;border-radius:9px;padding:12px;font-size:13px}.hit{padding:5px 0;color:#9cf9e7}.hit strong{color:white}.bottom{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}.bottom .panel{padding:16px}#cameraFeed{height:300px;position:relative;background:repeating-linear-gradient(0deg,#10283d 0px,#10283d 20px,#0e2336 21px);overflow:hidden;border-radius:10px;border:1px solid #2b536c}#cameraFeed:before{content:'SIMULATED AERIAL CAMERA';position:absolute;top:12px;left:12px;font-size:12px;color:#9cd8eb;letter-spacing:1px}#cameraTarget{position:absolute;left:42%;top:36%;width:25%;height:30%;border:2px solid #43edce;display:none}#cameraTarget span{position:absolute;bottom:100%;left:-2px;background:#43edce;color:#08242d;font-size:12px;font-weight:bold;padding:3px}#cameraFeed:after{content:'+';position:absolute;left:49%;top:43%;font-size:26px;color:#75e7da88}.warn{color:#ffdc93}@media(max-width:850px){main,.bottom{grid-template-columns:1fr}#scene{height:45vh}header{flex-wrap:wrap}}
+#loadingScreen{position:fixed;inset:0;z-index:1000;background:#06111ff5;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}#loadingCard{width:min(460px,95vw);padding:32px;border:1px solid #3dbdb4;border-radius:18px;background:#10263b}#loadingBar{height:12px;background:#203f53;border-radius:10px;overflow:hidden;margin:18px 0}#loadingFill{height:100%;width:0%;background:#41dcc6;transition:width .25s}#loadingScreen[hidden]{display:none}#loadingMessage{color:#b4d8e7}#loadingError{color:#ffd39a;font-size:13px}
+#scene:fullscreen{width:100vw;height:100vh;min-height:0;border-radius:0}#scene:fullscreen canvas{width:100%;height:100%}#cameraToolbar{position:absolute;right:12px;top:12px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70%}#cameraToolbar button{padding:8px 10px;margin:0;font-size:12px;background:#123c56;color:#ecffff;border:1px solid #5ecfda}#cameraToolbar button.active{background:#45dbc8;color:#06252b}#viewHint{position:absolute;bottom:12px;left:12px;z-index:4;background:#071b2cd9;padding:7px 10px;border-radius:7px;font-size:12px;color:#d2eff8;pointer-events:none}@media(max-width:650px){#cameraToolbar{top:45px;left:10px;right:10px;max-width:none}#cameraToolbar button{font-size:11px;padding:6px}}
+#cameraFeed canvas{position:absolute;inset:0;width:100%;height:100%;display:block}#cameraFeed:before,#cameraFeed:after{display:none}#cameraTelemetry{position:absolute;top:8px;left:10px;z-index:2;font:700 11px monospace;color:#a2ffeb;text-shadow:0 1px 5px #000;pointer-events:none}#cameraTarget{z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:100px;height:100px;box-shadow:0 0 12px #35ffd4aa}#cameraFeed .crosshair{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);color:#74fce4;pointer-events:none;font-size:20px;text-shadow:0 0 5px black}#viewHint{max-width:75%}
+#objectFeed{height:300px;position:relative;background:#071b2d;border:1px solid #2b536c;border-radius:10px;overflow:hidden}#objectFeed canvas{display:block;width:100%;height:100%}.objectHud{position:absolute;top:10px;left:10px;z-index:2;color:#9fffe7;font:700 12px monospace;text-shadow:0 2px 4px black;pointer-events:none}.objectReticle{position:absolute;left:50%;top:50%;width:130px;height:130px;transform:translate(-50%,-50%);border:2px solid #4df5d0;border-radius:8px;pointer-events:none;box-shadow:0 0 15px #3fe9c066}#captureObject{margin-top:10px}#objectCaptureNote{font-size:12px;color:#9bbbcf}@media(max-width:850px){#cameraFeed,#objectFeed{height:240px}}
+
+/* Large campus viewport with the independent live cameras on the right. */
+main{grid-template-columns:minmax(0,1fr) 330px;align-items:start}
+#scene{height:76vh;min-height:560px}
+#rightColumn{display:flex;flex-direction:column;gap:14px}
+#rightColumn .panel{padding:14px}
+#rightColumn h2{font-size:15px;margin-bottom:10px}
+#cameraFeed{height:245px}
+#objectFeed{height:245px}
+#missionPanel{grid-column:1/-1}
+#missionPanel aside{padding:16px}
+#missionPanel #feed{max-height:145px}
+.bottom{grid-template-columns:1fr}
+#cameraFeed .crosshair{z-index:4}
+#cameraTarget{pointer-events:none}
+@media(max-width:1050px){main{grid-template-columns:1fr}#scene{height:60vh;min-height:420px}#rightColumn{display:grid;grid-template-columns:1fr 1fr}}
+@media(max-width:650px){#rightColumn{display:flex}#scene{height:55vh;min-height:370px}}
+</style></head><body><div id="loadingScreen"><div id="loadingCard"><h2>AI UNLOCKED · Preparing Experiment</h2><p id="loadingMessage">Loading campus, drone, people, cars and trees…</p><div id="loadingBar"><div id="loadingFill"></div></div><strong id="loadingPercent">0%</strong><p id="loadingError"></p></div></div>
+<header><h1>AI UNLOCKED · DRONE VISION LAB</h1><small>VIRTUAL OBJECT DETECTION DEMO · NO REAL DRONE</small></header>
+<main><section class="panel"><div id="scene"><div class="tag">3D CAMPUS · RANDOMIZED SURVEY</div><div id="cameraToolbar"><button id="viewChase" class="active" title="Follow behind drone">🚁 Follow</button><button id="viewOrbit" title="Drag to rotate, scroll to zoom">🖱 Orbit</button><button id="viewTop" title="Top-down view">⬇ Top</button><button id="viewTarget" title="Look at the object being scanned">🎯 Target</button><button id="viewDrone" title="First-person drone camera">📷 Drone POV</button><button id="viewFull" title="Toggle fullscreen">⛶ Fullscreen</button></div><div id="viewHint">Follow camera · behind the drone</div><div class="scan" id="bbox"><span id="bboxLabel"></span></div></div></section>
+<div id="rightColumn"><section class="panel"><h2>📷 Drone camera · live aerial feed</h2><div id="cameraFeed"><div id="cameraTelemetry">DRONE CAM · LIVE 3D · SIMULATED DETECTION</div><div id="cameraTarget"><span id="cameraLabel"></span></div></div><p class="small">Live drone-mounted camera tracks each scanned target.</p></section><section class="panel"><h2>🎯 Object camera · individual capture</h2><div id="objectFeed"><div class="objectHud" id="objectHud">TARGET CAMERA · AWAITING SCAN</div><div class="objectReticle" id="objectReticle" hidden></div></div><button id="captureObject">📸 Capture object image</button><span id="objectCaptureNote">Save a PNG of the current target.</span><p class="small">Separate close-up camera shows the current person, car or tree.</p></section></div></main>
+<section id="missionPanel"><aside class="panel"><h2>Autonomous Object Detection</h2><div class="state" id="status">LOADING MODEL</div><div class="small" id="bridge">Connecting to n8n bridge…</div><div class="kv"><span>Local time</span><strong id="clock">--:--:--</strong></div><div class="kv"><span>Objects detected</span><strong id="count">0</strong></div><div class="kv"><span>Mission progress</span><strong id="progress">0%</strong></div><p><button id="launch">▶ Launch</button><button id="stop" class="secondary">■ Stop</button><button id="reset" class="muted">↺ Reset</button></p><div class="small" id="details">Loading 3D drone…</div><h2 style="margin-top:18px">Detection log</h2><div id="feed">Awaiting scan…</div><p class="small warn">EDUCATIONAL SIMULATION: Bounding boxes and confidence scores are scripted examples, not predictions from a trained AI model.</p></aside></section><div class="bottom"><section class="panel"><h2>How n8n controls this mission</h2><p class="small">n8n sends commands to <code>/api/launch</code>, <code>/api/stop</code> and <code>/api/reset</code>. The browser polls <code>/api/status</code>. Keep the Python bridge running.</p></section></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=id=>document.getElementById(id),root=$('scene');const scene=new THREE.Scene();scene.background=new THREE.Color(0x091b2c);
+const camera=new THREE.PerspectiveCamera(48,1,.1,1000);camera.position.set(9,7,12);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));root.prepend(renderer.domElement);
+const orbitControls=new OrbitControls(camera,renderer.domElement);orbitControls.enableDamping=true;orbitControls.dampingFactor=.075;orbitControls.enabled=false;orbitControls.maxPolarAngle=Math.PI*.49;orbitControls.minDistance=3;orbitControls.maxDistance=180;
+const droneCamera=new THREE.PerspectiveCamera(65,1,.08,1000);
+const feedRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false});feedRenderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));$('cameraFeed').prepend(feedRenderer.domElement);
+const objectCamera=new THREE.PerspectiveCamera(42,1,.05,1200);
+const objectRenderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});objectRenderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));$('objectFeed').prepend(objectRenderer.domElement);
+$('captureObject').addEventListener('click',()=>{try{const a=document.createElement('a');a.href=objectRenderer.domElement.toDataURL('image/png');a.download='drone-object-'+(currentTarget>=0&&objects[currentTarget]?objects[currentTarget].objectId:'standby')+'-'+Date.now()+'.png';a.click();$('objectCaptureNote').textContent='PNG capture saved.'}catch(e){$('objectCaptureNote').textContent='Capture unavailable: '+e.message}});
+const feedCrosshair=document.createElement('div');feedCrosshair.className='crosshair';feedCrosshair.textContent='+';$('cameraFeed').append(feedCrosshair);
+let viewMode='chase';const heading=new THREE.Vector3(0,0,-1),previousDrone=new THREE.Vector3();let cameraInitialized=false;
+function setView(mode){viewMode=mode;orbitControls.enabled=mode==='orbit';for(const [name,id] of [['chase','viewChase'],['orbit','viewOrbit'],['top','viewTop'],['target','viewTarget'],['drone','viewDrone']])$(id).classList.toggle('active',name===mode);const hints={chase:'Follow · behind drone',orbit:'Orbit · drag and zoom',top:'Top · aerial survey',target:'Target · camera tracks scanned object',drone:'Drone POV · on-board forward/downward view'};$('viewHint').textContent=hints[mode];if(mode==='orbit'){orbitControls.target.copy(droneGroup.position).add(new THREE.Vector3(0,1,0));orbitControls.update()}cameraInitialized=false}
+$('viewChase').addEventListener('click',()=>setView('chase'));$('viewOrbit').addEventListener('click',()=>setView('orbit'));$('viewTop').addEventListener('click',()=>setView('top'));$('viewTarget').addEventListener('click',()=>setView('target'));$('viewDrone').addEventListener('click',()=>setView('drone'));
+$('viewFull').addEventListener('click',async()=>{try{if(document.fullscreenElement===root)await document.exitFullscreen();else await root.requestFullscreen()}catch(e){console.warn('Fullscreen unavailable',e)}});
+document.addEventListener('fullscreenchange',()=>{$('viewFull').textContent=document.fullscreenElement===root?'⛶ Exit fullscreen':'⛶ Fullscreen';resize()});
+scene.add(new THREE.HemisphereLight(0xc9eaff,0x1c344b,2.3));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(5,11,6);scene.add(sun);
+// Campus and targets. All models are loaded before the loading screen closes.
+const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
+const FILES={campus:'campus.glb',people:['boy.glb','boy2.glb','boy3.glb','girl.glb','girl1.glb'],cars:['car1 (1).glb','car1 (2).glb'],trees:['tree1 (1).glb','tree1 (2).glb','tree1 (3).glb']};
+const objects=[],placed=new THREE.Group();scene.add(placed);
+const cache=new Map();let ready=false,droneReady=false,modelsReady=false,loadDone=0,loadFailures=[],screenFinished=false,pending=false;
+const totalAssets=1+FILES.people.length+FILES.cars.length+FILES.trees.length+1;
+$('launch').disabled=true;
+function progressLoad(label){loadDone++;$('loadingMessage').textContent=label;$('loadingPercent').textContent=Math.round(100*loadDone/totalAssets)+'%';$('loadingFill').style.width=(100*loadDone/totalAssets)+'%';if(loadDone===totalAssets){modelsReady=true;finishLoading();}}
+function loadGLB(path){return new Promise((resolve,reject)=>loader.load(path,g=>resolve(g.scene),undefined,reject));}
+function bounds(obj){obj.updateMatrixWorld(true);return new THREE.Box3().setFromObject(obj);}
+function normalized(source,targetHeight){const wrap=new THREE.Group(),model=source.clone(true);wrap.add(model);const b=bounds(model);if(b.isEmpty())return wrap;const size=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3());model.position.set(-center.x,-b.min.y,-center.z);wrap.scale.setScalar(targetHeight/Math.max(size.y,.001));return wrap;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
+let campus=null,campusBox=new THREE.Box3(),groundY=0,raycaster=new THREE.Raycaster();
+// Campus may have buildings and roads. Raycasts place objects on upward-facing surfaces.
+// Without the original campus geometry, road/lawn classification is not guaranteed.
+function groundAt(x,z){if(!campus)return null;raycaster.set(new THREE.Vector3(x,campusBox.max.y+30,z),new THREE.Vector3(0,-1,0));const hits=raycaster.intersectObject(campus,true);for(const h of hits){if(!h.face)continue;const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);if(n.y>.75)return h.point.y;}return null;}
+function sampleSpot(kind,occupied){const w=campusBox.max.x-campusBox.min.x,d=campusBox.max.z-campusBox.min.z;
+ for(let attempt=0;attempt<150;attempt++){
+  const x=campusBox.min.x+w*(.08+Math.random()*.84),z=campusBox.min.z+d*(.08+Math.random()*.84);
+  const y=groundAt(x,z);if(y===null)continue;
+  // Reject high roofs; retain the lower campus surface. Tune threshold for your campus model.
+  if(y>groundY+Math.max(3, (campusBox.max.y-groundY)*.25))continue;
+  const separation=kind==='TREE'?2.3:kind==='VEHICLE'?2.4:1.2;
+  if(occupied.some(p=>(p.x-x)**2+(p.z-z)**2<(p.r+separation)**2))continue;
+  occupied.push({x,z,r:separation});return {x,y,z};
+ }
+ // Fallback near the campus edge if a valid point was not found.
+ const x=campusBox.min.x+w*(.2+Math.random()*.6),z=campusBox.min.z+d*(.2+Math.random()*.6);
+ return {x,y:groundAt(x,z)??groundY,z};
+}
+function placeholder(kind){let m;if(kind==='PERSON')m=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.9,5,10),new THREE.MeshStandardMaterial({color:0xffbe77}));else if(kind==='TREE')m=new THREE.Mesh(new THREE.ConeGeometry(.65,2.6,8),new THREE.MeshStandardMaterial({color:0x3fc28d}));else m=new THREE.Mesh(new THREE.BoxGeometry(1.8,.65,1),new THREE.MeshStandardMaterial({color:0xffc16b}));m.position.y=kind==='TREE'?1.3:kind==='PERSON'?.85:.35;const g=new THREE.Group();g.add(m);return g;}
+function addTarget(kind,filename,i,position){const source=cache.get(filename);const model=source?normalized(source,kind==='PERSON'?1.8:kind==='TREE'?3.1:1.25):placeholder(kind);model.position.set(position.x,position.y,position.z);model.rotation.y=Math.random()*Math.PI*2;placed.add(model);const label=kind+'_'+(i+1);objects.push({name:kind,objectId:label,personId:kind==='PERSON'?label:null,model:filename,confidence:Math.min(.98,.88+Math.random()*.09),pos:[position.x,position.y,position.z],marker:new THREE.Vector3(position.x,position.y+(kind==='TREE'?2.2:kind==='PERSON'?1.45:1.1),position.z),mesh:model});}
+function randomizeEnvironment(){placed.clear();objects.length=0;const occupied=[];
+ shuffle([...FILES.people]).forEach((file,i)=>addTarget('PERSON',file,i,sampleSpot('PERSON',occupied)));
+ shuffle([...FILES.cars]).forEach((file,i)=>addTarget('VEHICLE',file,i,sampleSpot('VEHICLE',occupied)));
+ shuffle([...FILES.trees]).forEach((file,i)=>addTarget('TREE',file,i,sampleSpot('TREE',occupied)));
+}
+function finishLoading(){ready=droneReady&&modelsReady;if(!ready||screenFinished)return;screenFinished=true;randomizeEnvironment();$('loadingError').textContent=loadFailures.length?'Placeholder used: '+loadFailures.join(', '):'';$('status').textContent='STANDBY';$('details').textContent='Campus, five people, two cars and three trees prepared. Ready to scan 10 targets.';$('launch').disabled=false;setTimeout(()=>{$('loadingScreen').hidden=true;if(pending){pending=false;launch();}},loadFailures.length?1800:400);}
+const allFiles=[FILES.campus,...FILES.people,...FILES.cars,...FILES.trees];
+Promise.all(allFiles.map(async filename=>{
+ try{const model=await loadGLB('assets/compressed/'+filename);cache.set(filename,model);
+ if(filename===FILES.campus){campus=model;scene.add(campus);
+  // Preserve original campus proportions; center horizontally and fit its footprint to 95 units.
+  const original=bounds(campus),center=original.getCenter(new THREE.Vector3()),size=original.getSize(new THREE.Vector3());
+  campus.position.set(-center.x,-original.min.y,-center.z);campus.scale.setScalar(95/Math.max(size.x,size.z,.001));
+  campusBox=bounds(campus);groundY=campusBox.min.y;
+ }}catch(e){loadFailures.push(filename);console.error('Model load failed',filename,e);
+ if(filename===FILES.campus){const floor=new THREE.Mesh(new THREE.PlaneGeometry(95,95),new THREE.MeshStandardMaterial({color:0x24505b}));floor.rotation.x=-Math.PI/2;scene.add(floor);campus=floor;campusBox=new THREE.Box3(new THREE.Vector3(-47.5,-.1,-47.5),new THREE.Vector3(47.5,.1,47.5));groundY=0;}}
+ progressLoad('Prepared '+filename);
+}));
+let droneMixer=null;const rotorMeshes=[];let droneBody=null;const droneGroup=new THREE.Group();scene.add(droneGroup);const visual=new THREE.Group();droneGroup.add(visual);const beacon=new THREE.Mesh(new THREE.SphereGeometry(.18,16,12),new THREE.MeshBasicMaterial({color:0x4fffe3}));beacon.position.y=1;droneGroup.add(beacon);
+let loaded=false,mode='standby',start=0,elapsed=0,detected=new Set(),currentTarget=-1,lastId=null;
+new GLTFLoader().load('assets/drone_scout.glb',g=>{const model=g.scene;droneBody=model;
+ if(g.animations&&g.animations.length){droneMixer=new THREE.AnimationMixer(model);for(const clip of g.animations)droneMixer.clipAction(clip).play();}
+ // For unanimated GLBs, spin parts explicitly named propeller/rotor/blade.
+ model.traverse(o=>{if(o.isMesh&&/(propeller|rotor|blade)/i.test(o.name))rotorMeshes.push(o)});
+ model.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(model);if(box.isEmpty())throw Error('No visible geometry in GLB');const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());model.position.sub(center);const wrapper=new THREE.Group();wrapper.add(model);wrapper.scale.setScalar(3.5/Math.max(size.x,size.y,size.z,.0001));visual.add(wrapper);visual.position.y=1.1;model.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];mats.filter(Boolean).forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})}});beacon.visible=false;loaded=true;droneReady=true;progressLoad('Drone loaded');if(modelsReady)finishLoading()},undefined,e=>{$('status').textContent='MODEL ERROR';$('loadingMessage').textContent='Drone failed to load';$('loadingError').textContent='Check assets/drone_scout.glb and refresh: '+e.message;console.error(e)});
+function report(event, extra={}) {
+  fetch('/api/detections', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({event,...extra})}).catch(err=>console.warn('Report sync failed:',err));
+}
+function clearDetection(){detected.clear();currentTarget=-1;$('count').textContent='0';$('progress').textContent='0%';$('feed').textContent='Awaiting scan…';$('bbox').style.display='none';$('cameraTarget').style.display='none'}
+function launch(){if(!ready){pending=true;$('details').textContent='Launch queued until all models load';return}randomizeEnvironment();clearDetection();report('launch');mode='flying';elapsed=0;start=performance.now();$('status').textContent='TAKEOFF';$('details').textContent='Autonomous scan started. Virtual camera looking for campus objects.'}
+function stop(){pending=false;if(mode==='flying'){elapsed=(performance.now()-start)/1000;mode='stopped';report('stop');$('status').textContent='MISSION STOPPED';$('details').textContent='Flight paused at current position. Launch starts a new mission.'}else{$('status').textContent='STOPPED'}}
+function reset(){pending=false;mode='standby';report('reset');elapsed=0;droneGroup.position.set(0,0,0);droneGroup.rotation.set(0,0,0);clearDetection();$('status').textContent=loaded?'STANDBY':'LOADING MODEL';$('details').textContent='Mission reset. Ready for next command.'}
+$('launch').onclick=launch;$('stop').onclick=stop;$('reset').onclick=reset;
+async function poll(){try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const s=await r.json();$('bridge').textContent='● LOCAL N8N BRIDGE CONNECTED';if(lastId===null){lastId=s.command_id;return}if(s.command_id>lastId){lastId=s.command_id;if(s.command==='launch')launch();if(s.command==='stop')stop();if(s.command==='reset')reset()}}catch(e){$('bridge').textContent='○ LOCAL BRIDGE OFFLINE — use dashboard buttons'}}setInterval(poll,700);poll();
+function hit(index){if(detected.has(index))return;detected.add(index);const obj=objects[index];report('detection',{object:obj.name,confidence:obj.confidence,person_id:obj.personId||null,object_id:obj.objectId,model:obj.model||null});$('count').textContent=String(detected.size);if(detected.size===1)$('feed').textContent='';const div=document.createElement('div');div.className='hit';div.innerHTML='<strong>'+(obj.objectId||obj.name)+'</strong> · '+Math.round(obj.confidence*100)+'% confidence · simulated';$('feed').prepend(div);$('details').textContent='Detected '+obj.name+' (simulated '+Math.round(obj.confidence*100)+'% confidence).'}
+function overlay(index){const obj=objects[index];if(!obj){$('bbox').style.display='none';$('cameraTarget').style.display='none';return}const p=obj.marker.clone().project(camera);const w=root.clientWidth,h=root.clientHeight;const x=(p.x*.5+.5)*w,y=(-p.y*.5+.5)*h;if(p.z>1||x<0||x>w||y<0||y>h){$('bbox').style.display='none'}else{const b=$('bbox');b.style.display='block';b.style.left=(x-46)+'px';b.style.top=(y-46)+'px';b.style.width='92px';b.style.height='92px';$('bboxLabel').textContent=(obj.objectId||obj.name)+' '+Math.round(obj.confidence*100)+'%'}$('cameraTarget').style.display='block';$('cameraLabel').textContent=(obj.objectId||obj.name)+' '+Math.round(obj.confidence*100)+'%'}
+function resize(){const w=root.clientWidth,h=root.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();const fw=$('cameraFeed').clientWidth,fh=$('cameraFeed').clientHeight;feedRenderer.setSize(fw,fh);droneCamera.aspect=fw/fh;droneCamera.updateProjectionMatrix();const ow=$('objectFeed').clientWidth,oh=$('objectFeed').clientHeight;objectRenderer.setSize(ow,oh);objectCamera.aspect=ow/oh;objectCamera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();const clock=new THREE.Clock();const target=new THREE.Vector3(),desired=new THREE.Vector3(),movement=new THREE.Vector3(),lookAhead=new THREE.Vector3();
+const scanSeconds=5, takeoffSeconds=5,landingSeconds=6;const flightAltitude=17;
+function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);$('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});
+ if(mode==='flying'){
+ elapsed=(performance.now()-start)/1000;const t=elapsed,scanEnd=takeoffSeconds+objects.length*scanSeconds,total=scanEnd+landingSeconds;
+ if(t<takeoffSeconds){droneGroup.position.set(0,Math.max(.05,t/takeoffSeconds*flightAltitude),0);$('status').textContent='TAKEOFF';currentTarget=-1;}
+ else if(t<scanEnd){const slot=Math.min(objects.length-1,Math.floor((t-takeoffSeconds)/scanSeconds));const f=((t-takeoffSeconds)%scanSeconds)/scanSeconds;
+ const from=slot===0?new THREE.Vector3(0,flightAltitude,0):new THREE.Vector3(objects[slot-1].pos[0],objects[slot-1].pos[1]+flightAltitude,objects[slot-1].pos[2]);
+ const to=new THREE.Vector3(objects[slot].pos[0],objects[slot].pos[1]+flightAltitude,objects[slot].pos[2]);droneGroup.position.lerpVectors(from,to,Math.min(1,f*1.8));$('status').textContent='SCANNING CAMPUS';currentTarget=slot;if(f>.48)hit(slot);}
+ else if(t<total){const f=(t-scanEnd)/landingSeconds;const last=objects[objects.length-1];droneGroup.position.lerpVectors(new THREE.Vector3(last.pos[0],last.pos[1]+flightAltitude,last.pos[2]),new THREE.Vector3(0,0,0),f);$('status').textContent='RETURN & LANDING';currentTarget=-1;}
+ else{mode='complete';report('complete');droneGroup.position.set(0,0,0);$('status').textContent='MISSION COMPLETE';$('details').textContent='Survey complete: '+detected.size+' simulated detections (5 people, 2 cars, 3 trees).';currentTarget=-1;}
+ $('progress').textContent=Math.min(100,Math.round(t/total*100))+'%';
+ }
+ // Animate built-in GLB clips, spinning named rotors and subtle flying tilt.
+ if(droneMixer)droneMixer.update(dt);
+ if(mode==='flying'){
+   for(const rotor of rotorMeshes)rotor.rotation.y+=dt*34;
+   visual.rotation.z=THREE.MathUtils.lerp(visual.rotation.z,Math.sin(elapsed*1.9)*.045,Math.min(1,dt*4));
+   visual.rotation.x=THREE.MathUtils.lerp(visual.rotation.x,Math.cos(elapsed*1.7)*.035,Math.min(1,dt*4));
+   visual.position.y=1.1+Math.sin(elapsed*7)*.045;
+ }else{visual.rotation.x*=Math.max(0,1-dt*4);visual.rotation.z*=Math.max(0,1-dt*4);visual.position.y=1.1;}
+ // Update heading from flight path, not from decorative model rotation.
+ movement.copy(droneGroup.position).sub(previousDrone);movement.y=0;if(movement.lengthSq()>.000002){movement.normalize();heading.lerp(movement,Math.min(1,dt*3)).normalize()}previousDrone.copy(droneGroup.position);if(mode==='flying'&&movement.lengthSq()>.000002){const yaw=Math.atan2(-heading.x,-heading.z);droneGroup.rotation.y=THREE.MathUtils.lerp(droneGroup.rotation.y,yaw,Math.min(1,dt*3));}
+ target.copy(droneGroup.position).add(new THREE.Vector3(0,1.2,0));
+ if(viewMode==='chase'){
+   desired.copy(target).addScaledVector(heading,-19).add(new THREE.Vector3(0,9,0));
+   if(!cameraInitialized){camera.position.copy(desired);cameraInitialized=true}else camera.position.lerp(desired,1-Math.exp(-dt*3.3));
+   lookAhead.copy(target).addScaledVector(heading,6);camera.lookAt(lookAhead);
+ }else if(viewMode==='top'){
+   desired.copy(target).add(new THREE.Vector3(0,115,.01));
+   if(!cameraInitialized){camera.position.copy(desired);cameraInitialized=true}else camera.position.lerp(desired,1-Math.exp(-dt*2.5));
+   camera.lookAt(target);
+ }else{orbitControls.update()}
+ // On-board camera: position on the drone and aim at the active object.
+ // The camera is a genuine Three.js render, while recognition is scripted.
+ const active=(mode==='flying'&&currentTarget>=0)?objects[currentTarget]:null;
+ const droneEye=droneGroup.position.clone().add(new THREE.Vector3(0,.2,0));
+ droneCamera.position.copy(droneEye);
+ const aim=active?active.marker.clone():droneEye.clone().addScaledVector(heading,14).add(new THREE.Vector3(0,-10,0));
+ if(aim.distanceToSquared(droneEye)<.05)aim.add(new THREE.Vector3(0,-2,-.1));
+ droneCamera.lookAt(aim);
+ if(viewMode==='drone'){camera.position.copy(droneCamera.position);camera.quaternion.copy(droneCamera.quaternion)}
+ else if(viewMode==='target'){
+   const point=active?active.marker:droneGroup.position;
+   desired.copy(droneEye).addScaledVector(heading,-7).add(new THREE.Vector3(0,4,0));
+   if(!cameraInitialized){camera.position.copy(desired);cameraInitialized=true}else camera.position.lerp(desired,1-Math.exp(-dt*4));
+   camera.lookAt(point);
+ }
+ $('cameraTelemetry').textContent=active?'DRONE CAM · TRACKING '+active.objectId+' · SIMULATED':'DRONE CAM · LIVE 3D · STANDBY';
+ $('cameraTarget').style.display=active?'block':'none';
+ // Independent close-up target camera, separate from the aerial drone feed.
+ if(active){
+   const center=active.marker;
+   const box=new THREE.Box3().setFromObject(active.mesh);
+   const size=box.getSize(new THREE.Vector3());
+   const radius=Math.max(1.3,size.x,size.y,size.z);
+   const distance=radius/(2*Math.tan(THREE.MathUtils.degToRad(objectCamera.fov/2)))*1.35;
+   const offset=new THREE.Vector3(0.65,0.36,1).normalize().multiplyScalar(distance);
+   objectCamera.position.copy(center).add(offset);
+   objectCamera.lookAt(center);
+   $('objectHud').textContent='TARGET '+active.objectId+' · '+active.name+' · '+Math.round(active.confidence*100)+'% SIMULATED';
+   $('objectReticle').hidden=false;
+ }else{
+   const center=campusBox.getCenter(new THREE.Vector3());
+   objectCamera.position.copy(center).add(new THREE.Vector3(0,40,45));objectCamera.lookAt(center);
+   $('objectHud').textContent='TARGET CAMERA · AWAITING SCAN';$('objectReticle').hidden=true;
+ }
+ objectRenderer.render(scene,objectCamera);
+ if(active)$('cameraLabel').textContent=active.objectId+' '+Math.round(active.confidence*100)+'%';
+ // Hide drone body only for drone-mounted rendering to avoid obstructing the lens.
+ const wasVisible=visual.visible;visual.visible=false;
+ feedRenderer.render(scene,droneCamera);
+ visual.visible=wasVisible;
+ overlay(mode==='flying'?currentTarget:-1);
+ if(viewMode==='drone')visual.visible=false;renderer.render(scene,camera);visual.visible=wasVisible;
+}frame();
+</script></body></html>
